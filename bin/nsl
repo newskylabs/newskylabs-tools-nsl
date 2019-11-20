@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+## Usage:
+## 
+##   nsl
+
+# Check if the `NSL` environment variable is set
+if [ -z "$NSL" ]; then
+  echo "ERROR The NSL environment variable has to be set to the NewSkyLabs project base dir!"
+  exit
+fi
+
+echo
+( cd $NSL/tools/nsl/git/bin; /bin/ls -1 | egrep -v '~$'; )
+echo
+
+## fin.
