@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+## =========================================================
+##                    Dietrich Bollmann, Luebeck, 2019/11/20
+## 
+## nsl-list-projects
+## ---------------------------------------------------------
+## Usage:
+## 
+##   nsl-list-projects
+## ---------------------------------------------------------
+
+# Check if the `NSL` environment variable is set
+if [ -z "$NSL" ]; then
+  echo "ERROR The NSL environment variable has to be set to the NewSkyLabs project base dir!"
+  exit
+fi
+
+function find_project_dirs () {
+
+  find "$NSL" | egrep '/.git$' | egrep -v '/bu/' | perl -pe "s|^$HOME|~|; s|/\.git$||"
+}
+
+# TEST
+find_project_dirs
+
+## =========================================================
+## =========================================================
+
+## fin.
