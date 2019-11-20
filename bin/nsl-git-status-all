@@ -1,0 +1,199 @@
+#!/usr/bin/env bash
+## =========================================================
+##                    Dietrich Bollmann, Luebeck, 2019/03/06
+## 
+## newskylabs-python-uninstall
+## ---------------------------------------------------------
+
+function usage() {
+  cat > /dev/stdout <<EOF
+nsl-git-status-all
+
+Print the git status of all NewSkyLabs projects.
+
+Usage: nsl-git-status-all
+
+Options:
+
+  -h, --help           Print the current help text.
+
+Examples:
+  
+nsl-git-status-all
+
+EOF
+  exit;
+}
+
+## =========================================================
+## defaults:
+## ---------------------------------------------------------
+
+# debug mode
+#| debug=true
+debug=false
+
+## =========================================================
+## deval
+## ---------------------------------------------------------
+## evaluate a command.
+## when in debug mode, only print the command.
+## example:
+## deval "ls /tmp/"
+## ---------------------------------------------------------
+
+function deval {
+
+  cmd="$@"
+
+  if ${debug}; then
+    echo "DEBUG ${cmd}"
+  else
+    echo "${cmd}"
+    eval "${cmd}"
+  fi
+}
+
+## =========================================================
+## git_is_clean
+## 
+## Test if the git tree in the current directory is clean - 
+## and nothing is there to commit.
+## ---------------------------------------------------------
+
+function git_is_clean () {
+    clean=$(git status | grep 'nothing to commit, working tree clean')
+    if [ -n "$clean" ]; then 
+	echo 'true'
+    else
+	echo 'false'
+    fi
+}
+
+## =========================================================
+## git_status
+## 
+## Print the git status of the given directory
+## ---------------------------------------------------------
+
+function git_status () {
+    dir="$1"
+
+    project=$(get_project_name "$dir")
+
+    echo "============================================================"
+    echo "$project"
+    echo "cd $dir; git status"
+    echo "------------------------------------------------------------"
+    echo
+
+    # Using eval to interpret '~/'
+    eval "cd $dir"
+
+    cmd="git status"
+    echo ">>> $cmd"
+    echo
+    eval "$cmd"
+    echo
+}
+
+## =========================================================
+## Get project name
+## 
+## Get the project name from the project dir
+## 
+## Examples:
+## 
+##   - /some/path/<project-name>.git -> <project-name>
+##   - /some/path/<project-name>/git -> <project-name>
+## 
+## ---------------------------------------------------------
+
+function get_project_name () {
+  projectdir="$1"
+
+  echo "$projectdir" | perl -pe 's!\.git$|/git$!!; s|.*/||'
+}
+
+# TEST
+#| get_project_name "/some/path/<project-name>.git"
+#| get_project_name "/some/path/<project-name>/git"
+#| exit
+
+## =========================================================
+## git_status
+## 
+## Print the git status of the given directory
+## ---------------------------------------------------------
+
+function nsl_git_status_all () {
+
+  # Get list of current newskylabs python project dirs
+  projectdirs=$(nsl-list-projects)
+  
+  echo 
+  uncleanprojectdirs=""
+  for dir in $projectdirs; do
+  
+    project=$(get_project_name "$dir")
+  
+    eval "cd $dir"
+  
+    if $(git_is_clean); then
+        printf "  - %-30sclean\n" "$project"
+    else
+        printf "  - %-30sUNCLEAN\n" "$project"
+        uncleanprojectdirs="$uncleanprojectdirs $dir"
+    fi
+  done
+  echo
+  
+  if [ -z "$uncleanprojectdirs" ]; then
+      echo "done :)"
+      echo 
+  else 
+      echo "TODO:"
+      echo
+      for dir in $uncleanprojectdirs; do
+  
+  	#| echo "(cd $dir; git status)"
+  	#| echo
+  
+  	git_status "$dir"
+  
+      done
+      echo "============================================================"
+      echo "============================================================"
+      echo
+  fi
+}
+
+## =========================================================
+## Processing parameters and options
+## ---------------------------------------------------------
+
+# defaults
+#| parameters=""
+
+while (($#)); do
+  case "$1" in
+    -h | --help          )  usage;;
+    #| -t | --test          )  deval "ls /tmp/"; exit;;
+    #| -d | --debug         )  debug=true; echo "[DEBUG] debug mode..." > /dev/stderr;;
+    -*                   )  echo "[ERROR] Unknown option: $1" > /dev/stderr; usage;;
+    #| *                    )  parameters="$parameters $1";;
+    *                    )  echo "[ERROR] Unknown parameter: $1" > /dev/stderr; usage;;
+  esac
+  shift
+done
+
+## =========================================================
+## Main
+## ---------------------------------------------------------
+
+nsl_git_status_all
+
+## =========================================================
+## =========================================================
+
+## fin.
